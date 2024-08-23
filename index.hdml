@@ -1,0 +1,136 @@
+# Copyright (c) 2024 Hunter2788
+# This code is licensed under the MIT License.
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Matrix Screensaver with Voice Assistant</title>
+    <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            background-color: black;
+            color: green;
+            font-family: 'Courier New', Courier, monospace;
+            height: 100%;
+        }
+
+        canvas {
+            display: block;
+            position: absolute;
+            top: 0;
+            left: 0;
+        }
+
+        #askButton {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: green;
+            color: black;
+            border: none;
+            padding: 15px 30px;
+            font-size: 20px;
+            cursor: pointer;
+            z-index: 10;
+        }
+    </style>
+</head>
+<body>
+
+    <canvas id="matrixCanvas"></canvas>
+    <button id="askButton">Ask Something</button>
+
+    <script>
+        // Matrix screensaver effect
+        const canvas = document.getElementById('matrixCanvas');
+        const context = canvas.getContext('2d');
+
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+
+        const columns = canvas.width / 20; // Number of columns
+        const drops = Array(Math.floor(columns)).fill(1);
+
+        function drawMatrix() {
+            context.fillStyle = 'rgba(0, 0, 0, 0.05)';
+            context.fillRect(0, 0, canvas.width, canvas.height);
+
+            context.fillStyle = '#0F0'; // Green text
+            context.font = '18px Courier';
+
+            for (let i = 0; i < drops.length; i++) {
+                const text = String.fromCharCode(Math.floor(33 + Math.random() * 93));
+                context.fillText(text, i * 20, drops[i] * 20);
+
+                if (drops[i] * 20 > canvas.height && Math.random() > 0.975) {
+                    drops[i] = 0;
+                }
+
+                drops[i]++;
+            }
+        }
+
+        setInterval(drawMatrix, 35);
+
+        // Voice assistant functionality
+        const askButton = document.getElementById('askButton');
+        let recognition;
+        let synth = window.speechSynthesis;
+
+        function startRecognition() {
+            recognition = new window.SpeechRecognition();
+            recognition.lang = 'en-US';
+            recognition.interimResults = false;
+            recognition.maxAlternatives = 1;
+
+            recognition.start();
+
+            recognition.onresult = (event) => {
+                const speechResult = event.results[0][0].transcript.toLowerCase();
+                console.log('Result received: ' + speechResult);
+                handleCommand(speechResult);
+            };
+
+            recognition.onend = () => {
+                console.log('Speech recognition ended.');
+            };
+
+            recognition.onerror = (event) => {
+                console.error('Speech recognition error: ' + event.error);
+            };
+        }
+
+        function handleCommand(command) {
+            if (command.includes("hello")) {
+                speak("Hello, how can I help you?");
+            } else if (command.includes("what's your name")) {
+                speak("I'm your assistant.");
+            } else {
+                speak("Searching the web for " + command);
+                searchInternet(command);
+            }
+        }
+
+        function speak(message) {
+            let utterThis = new SpeechSynthesisUtterance(message);
+            utterThis.voice = synth.getVoices()[0];
+            synth.speak(utterThis);
+        }
+
+        function searchInternet(query) {
+            const searchUrl = `https://www.google.com/search?q=${encodeURIComponent(query)}`;
+            window.open(searchUrl, '_blank');
+        }
+
+        askButton.addEventListener('click', function () {
+            speak("Listening...");
+            startRecognition();
+        });
+    </script>
+
+</body>
+</html>
